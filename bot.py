@@ -66,47 +66,70 @@ async def get_channel_id_from_input(bot, message):
 custom_message_filter = filters.create(lambda _, __, message: False if message.forward_from_chat or message.from_user else True)
 custom_chat_filter = filters.create(lambda _, __, message: True if message.sender_chat else False)
 
+
 @JV_BOT.on_message(custom_message_filter & filters.group & custom_chat_filter)
 async def main_handler(bot, message):
     chat_id = message.chat.id
     a_id = message.sender_chat.id
-    if (await whitelist_check(chat_id, a_id)):
+    if await whitelist_check(chat_id, a_id):
         return
-    elif a_id is chat_id:
+    if a_id == chat_id:
         return
     try:
         res = await bot.ban_chat_member(chat_id, a_id)
-    except:
-        return await message.reply_text("Promote me as admin, to use me")
+    except Exception:
+        return await message.reply_text(
+            "🚫 <b>Permission Error:</b> Please promote me as <b>admin</b> to use this feature.",
+            parse_mode="html",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("How to Promote?", url="https://core.telegram.org/bots#bot-administration")]
+            ])
+        )
     if res:
-        mention = f"@{message.sender_chat.username}" if message.sender_chat.username else message.chat_data.title
-        await message.reply_text(text=f"{mention} has been banned.\n\n💡 He can write only with his profile but not through other channels.",
-                                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Unban", callback_data=f"unban_{chat_id}_{a_id}")]]),
-                              )
+        mention = f"@{message.sender_chat.username}" if message.sender_chat.username else message.sender_chat.title
+        await message.reply_text(
+            f"✅ <b>{mention} has been banned!</b>\n\n<code>They can only write with their profile, not through channels.</code>",
+            parse_mode="html",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Unban Channel", callback_data=f"unban_{chat_id}_{a_id}")],
+                [InlineKeyboardButton("Support Group", url="https://t.me/JV_Community")]
+            ])
+        )
     await message.delete()
+
 
 
 @JV_BOT.on_message(filters.command(["start"]) & filters.private)
 async def start_handler(bot, message):
-    await message.reply_text(text="""Hey! Just add me to the chat, and I will block the channels that write to the chat,
+    await message.reply_text(
+        "👋 <b>Welcome to Anti-Channel-bot!</b>\n\nAdd me to your group and promote me as admin. I will automatically block channels that send messages in your group.\n\nType /help for more info.",
+        parse_mode="html",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Bot Updates", url="https://t.me/Universal_Projects"),
+             InlineKeyboardButton("Support Group", url="https://t.me/JV_Community")]
+        ]),
+        disable_web_page_preview=True
+    )
 
-check /help for more.""",
-                             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Bots Channel", url=f"https://t.me/Universal_Projects"),
-                                                                 InlineKeyboardButton("Support Group", url=f"https://t.me/JV_Community")]]),
-                             disable_web_page_preview=True)
 
+# Improved help message UI
 @JV_BOT.on_message(filters.command(["help"]) & filters.private)
 async def help_handler(bot, message):
-    await message.reply_text(text="""/ban [channel_id] : ban channel from sending message as channel.
-/unban [channel_id] : unban channel from sending message as channel.
-/add_whitelist [channel_id] : add channel into whitelist and protect channel for automatic actions.
-/del_whitelist [channel_id] : remove channel from whitelist.
-/show_whitelist : Show all white list channels.
-
-for more help ask at @JV_Community""",
-                             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Bots Channel", url=f"https://t.me/Universal_Projects"),
-                                                                 InlineKeyboardButton("Support Group", url=f"https://t.me/JV_Community")]]),
-                             disable_web_page_preview=True)
+    await message.reply_text(
+        "<b>Anti-Channel-bot Commands:</b>\n\n"
+        "/ban [channel_id] : Ban channel from sending messages as channel.\n"
+        "/unban [channel_id] : Unban channel.\n"
+        "/add_whitelist [channel_id] : Whitelist a channel.\n"
+        "/del_whitelist [channel_id] : Remove channel from whitelist.\n"
+        "/show_whitelist : Show all whitelisted channels.\n\n"
+        "For more help, ask at <a href='https://t.me/JV_Community'>JV Community</a>.",
+        parse_mode="html",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Bot Updates", url="https://t.me/Universal_Projects"),
+             InlineKeyboardButton("Support Group", url="https://t.me/JV_Community")]
+        ]),
+        disable_web_page_preview=True
+    )
 
 
 
